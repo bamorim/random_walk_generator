@@ -2,7 +2,7 @@
 #include<bob.hpp>
 #include<sstream>
 
-TEST_CASE( "Bob says hello" ) {
+TEST_CASE( "Bob says hello", "[bob]" ) {
   Bob b;
   std::stringstream ss;
 
