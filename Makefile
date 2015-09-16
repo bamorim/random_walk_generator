@@ -3,34 +3,39 @@
 # 
 
 CC := clang++
-SRCDIR := src
-BUILDDIR := build
-TESTDIR := test
-BINTESTDIR := bin/test
-
-SRCEXT := cpp
-SOURCES := $(shell find $(SRCDIR) -type f -name *.$(SRCEXT))
-OBJECTS := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
-
-TESTS := $(shell find $(TESTDIR) -type f -name *.$(SRCEXT))
-BINTESTS := $(patsubst $(TESTDIR)/%,$(BINTESTDIR)/%,$(TESTS:.$(SRCEXT)=.test))
-
 CFLAGS := -std=c++1y -Wall
 LIB := -L lib
 INC := -I include
 
-$(BUILDDIR)/%.o: $(SRCDIR)/%.$(SRCEXT)
-	@echo " Compiling..."
-	@mkdir -p $(BUILDDIR)
-	$(CC) $(CFLAGS) $(INC) -c -o $@ $<
+SRCDIR := src
+BUILDDIR := build
+TESTDIR := test
+SRCEXT := cpp
 
-$(BINTESTDIR)/%.test: $(TESTDIR)/%.$(SRCEXT) $(OBJECTS)
-	@echo " Compiling test $@ "
-	@mkdir -p $(BINTESTDIR)
-	$(CC) $(CFLAGS) $(INC) $(LIB) -o $@ $^
+SOURCES := $(shell find $(SRCDIR) -type f -name *.$(SRCEXT))
+TESTS := $(shell find $(TESTDIR) -type f -name *.$(SRCEXT))
 
-test: $(BINTESTS)
-	@$(foreach test, $(BINTESTS), ./$(test))
+OBJECTS := $(patsubst %,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
+TESTOBJECTS := $(patsubst %,$(BUILDDIR)/%,$(TESTS:.$(SRCEXT)=.o))
+
+$(BUILDDIR)/$(SRCDIR)/%.o: $(SRCDIR)/%.$(SRCEXT)
+	@echo " Compiling main object: $@"
+	@mkdir -p $(BUILDDIR)/$(SRCDIR)
+	@$(CC) $(CFLAGS) $(INC) -c -o $@ $<
+
+$(BUILDDIR)/$(TESTDIR)/%.o: $(TESTDIR)/%.$(SRCEXT)
+	@echo " Compiling test object: $@"
+	@mkdir -p $(BUILDDIR)/$(TESTDIR)
+	@$(CC) $(CFLAGS) $(INC) -c -o $@ $<
+
+
+bin/test: $(TESTOBJECTS) $(OBJECTS)
+	@echo " Linking test executable..."
+	@$(CC) $(CFLAGS) $(LIB) -o bin/test $^
+
+test: bin/test
+	@echo " Running tests..."
+	@./bin/test
 
 .PHONY: test
 
