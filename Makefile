@@ -52,4 +52,5 @@ clean:
 	@echo " Cleaning..."
 	@rm -rf $(BUILDDIR) $(BINTESTDIR)
 
+# Look at http://make.mad-scientist.net/papers/advanced-auto-dependency-generation/ for further info on make deps and those included files
 -include $(wildcard $(BUILDDIR)/**/*.d)
