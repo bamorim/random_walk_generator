@@ -10,6 +10,7 @@ INC := -I include
 SRCDIR := src
 BUILDDIR := build
 TESTDIR := test
+APPSDIR := apps
 INCDIR := include
 
 SRCEXT := cpp
@@ -17,6 +18,7 @@ HEADEXT := hpp
 
 SOURCES := $(shell find $(SRCDIR) -type f -name *.$(SRCEXT))
 TESTS := $(shell find $(TESTDIR) -type f -name *.$(SRCEXT))
+APPS := $(shell find $(APPSDIR) -type f -name *.$(SRCEXT))
 HEADERS := $(shell find $(INCDIR) -type f -name *.$(HEADEXT))
 
 OBJECTS := $(patsubst %,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
@@ -26,21 +28,19 @@ COMPILE := $(CC) $(CFLAGS) $(INC) -c
 MAKEDEPS := $(COMPILE) -MMD
 LINKEDIT := $(CC) $(CFLAGS) $(LIB)
 
-$(BUILDDIR)/$(SRCDIR)/%.o: $(SRCDIR)/%.$(SRCEXT)
-	@echo " Compiling main object: $@"
-	@mkdir -p $(BUILDDIR)/$(SRCDIR)
-	@$(MAKEDEPS) -o $@ $<
-	@$(COMPILE) -o $@ $<
+bin/%: $(BUILDDIR)/$(APPSDIR)/%.o $(OBJECTS)
+	@echo " Compiling app: $@"
+	@$(LINKEDIT) -o $@ $^
 
-$(BUILDDIR)/$(TESTDIR)/%.o: $(TESTDIR)/%.$(SRCEXT)
-	@echo " Compiling test object: $@"
-	@mkdir -p $(BUILDDIR)/$(TESTDIR)
-	@$(MAKEDEPS) -o $@ $<
-	@$(COMPILE) -o $@ $<
-
-bin/test: $(TESTOBJECTS) $(OBJECTS)
+bin/test: $(OBJECTS) $(TESTOBJECTS)
 	@echo " Linking test executable..."
 	@$(LINKEDIT) -o $@ $^
+
+$(BUILDDIR)/%.o: %.$(SRCEXT)
+	@echo " Compiling object: $@"
+	@mkdir -p $(dir $@)
+	@$(MAKEDEPS) -o $@ $<
+	@$(COMPILE) -o $@ $<
 
 test: bin/test
 	@echo " Running tests..."

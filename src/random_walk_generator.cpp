@@ -16,7 +16,7 @@ namespace RandomWalkGenerator {
   }
 
   Graph run(uint_fast32_t seed, uint_fast32_t max_order, uint_fast32_t steps, uint_fast32_t initial_order){
-    Graph graph;
+    Graph graph(max_order);
     initialize_complete_graph(graph, initial_order);
     RandomWalker walker(seed, &graph);
 

@@ -1,1 +1,1 @@
-nmap <leader>r :!./run_tests<CR>
+nmap <leader>t :!./run_tests<CR>

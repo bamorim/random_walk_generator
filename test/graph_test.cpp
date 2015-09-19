@@ -1,4 +1,5 @@
 #include<catch.hpp>
+#define private public
 #include<graph.hpp>
 
 TEST_CASE( "vertices can be checked and added to a graph", "[graph]" ){
@@ -14,6 +15,14 @@ TEST_CASE( "vertices can be checked and added to a graph", "[graph]" ){
     REQUIRE( g.size() == 0);
   }
 };
+
+TEST_CASE( "we can preallocate space on the adjacency vector" ){
+  Graph g(1000);
+  REQUIRE( g.order() == 0);
+  REQUIRE( g.size() == 0);
+  REQUIRE( g.adjacency_vector.size() == 0 );
+  REQUIRE( g.adjacency_vector.capacity() == 1000 );
+}
 
 TEST_CASE( "adding edges to a graph", "[graph]" ){
   Graph g;
