@@ -1,6 +1,5 @@
 #include<catch.hpp>
 #include<graph.hpp>
-#include<sstream>
 
 TEST_CASE( "vertices can be checked and added to a graph", "[graph]" ){
   Graph g;
@@ -9,25 +8,34 @@ TEST_CASE( "vertices can be checked and added to a graph", "[graph]" ){
   REQUIRE( g.size() == 0 );
 
   SECTION( "adding vertices" ){
-    g.addVertex();
+    g.add_vertex();
 
     REQUIRE( g.order() == 1);
     REQUIRE( g.size() == 0);
   }
 };
 
-TEST_CASE( "edges can be added to a graph", "[graph]" ){
+TEST_CASE( "adding edges to a graph", "[graph]" ){
   Graph g;
-  for(int i = 0; i < 5; i++) {
-    g.addVertex();
+  g.add_vertex();
+  for(int i = 0; i < 3; i++) {
+    g.add_vertex();
+    g.add_edge(0,i+1);
   }
 
-  REQUIRE( g.order() == 5 );
+  REQUIRE( g.order() == 4 );
 
   SECTION( "add edge should increase the size" ){
-    g.addEdge(0,1);
-    REQUIRE( g.size() == 1);
-    g.addEdge(1,2);
-    REQUIRE( g.size() == 2);
+    REQUIRE( g.size() == 3 );
   }
-};
+
+  SECTION( "Should get a vector of neighbors" ){
+    REQUIRE( g.neighbors_of(0)[0] == 1 );
+    REQUIRE( g.neighbors_of(0)[1] == 2 );
+    REQUIRE( g.neighbors_of(0)[2] == 3 );
+  }
+
+  SECTION( "Edges should be undirected" ){
+    REQUIRE( g.neighbors_of(1).size() == 1 );
+  }
+}
