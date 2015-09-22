@@ -16,7 +16,7 @@ TEST_CASE( "vertices can be checked and added to a graph", "[graph]" ){
   }
 };
 
-TEST_CASE( "we can preallocate space on the adjacency vector" ){
+TEST_CASE( "we can preallocate space on the adjacency vector", "[graph]" ){
   Graph g(1000);
   REQUIRE( g.order() == 0);
   REQUIRE( g.size() == 0);
