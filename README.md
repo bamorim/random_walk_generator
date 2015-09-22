@@ -35,7 +35,7 @@ You can just use the `make test` to build the tests and run all tests
 
 ### Specific tests
 
-Alternatively, you can use `make bin/test` to generate the test binary and can use the executable to see all the options.
+Alternatively, you can use `make bin/test` to generate the test binary and can use the executable to more usages.
 
 Typing `./bin/test --help` you can see all the options for using the binary (This can also be seem in the [Catch documentation][catch_doc]).
 
