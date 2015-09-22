@@ -2,7 +2,8 @@
 #include<cxxopts.hpp>
 #include<random_walk_generator.hpp>
 #include<graph.hpp>
-#include<ctime>
+#include<degree_dist_csv_formatter.hpp>
+#include<random>
 
 int main(int argc, char** argv){
   cxxopts::Options options(argv[0]);
@@ -32,10 +33,12 @@ int main(int argc, char** argv){
     return 1;
   }
 
-  auto seed = options.count("seed") > 0 ? options["seed"].as<uint_fast32_t>() : std::time(nullptr);
-  auto steps = options.count("seed") > 0 ? options["steps"].as<uint_fast32_t>() : 1;
+  std::random_device rd;
+
+  auto seed = options.count("seed") > 0 ? options["seed"].as<uint_fast32_t>() : rd();
+  auto steps = options.count("steps") > 0 ? options["steps"].as<uint_fast32_t>() : 1;
   auto max_order = options["max-order"].as<uint_fast32_t>();
-  auto initial_order = options.count("seed") > 0 ? options["initial-order"].as<uint_fast32_t>() : 3;
+  auto initial_order = options.count("initial_order") > 0 ? options["initial-order"].as<uint_fast32_t>() : 3;
 
   std::cout << "Running with params:" << std::endl
     << "Seed: " << seed << std::endl
@@ -44,12 +47,7 @@ int main(int argc, char** argv){
     << "Initial Order: " << initial_order << std::endl << std::endl;
 
   Graph g = RandomWalkGenerator::run(seed, max_order, steps, initial_order);
-
-  uint_fast32_t degree = 0;
-  for(auto d : g.degree_distribution()) {
-    std::cout << degree << ":" << d << std::endl;
-    degree++;
-  }
+  DegreeDistCsvFormatter::format(g.degree_distribution(), std::cout);
 
   return 0;
 }
