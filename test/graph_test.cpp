@@ -39,12 +39,12 @@ TEST_CASE( "adding edges to a graph", "[graph]" ){
   }
 
   SECTION( "Should get a vector of neighbors" ){
-    REQUIRE( g.neighbors_of(0)[0] == 1 );
-    REQUIRE( g.neighbors_of(0)[1] == 2 );
-    REQUIRE( g.neighbors_of(0)[2] == 3 );
+    REQUIRE( g.neighbors_of(0)->at(0) == 1 );
+    REQUIRE( g.neighbors_of(0)->at(1) == 2 );
+    REQUIRE( g.neighbors_of(0)->at(2) == 3 );
   }
 
   SECTION( "Edges should be undirected" ){
-    REQUIRE( g.neighbors_of(1).size() == 1 );
+    REQUIRE( g.neighbors_of(1)->size() == 1 );
   }
 }
