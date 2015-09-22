@@ -27,7 +27,7 @@ Usage:
 
 ## Testing
 
-This projects use the awesome header-only test library [Catch][catch]. I've also created a shell script that makes things simpler. So you have 3 ways of testing:
+This project uses the awesome header-only test library [Catch][catch]. I've also created a shell script that makes things simpler. So you have 3 ways of testing:
 
 ### Test all
 
