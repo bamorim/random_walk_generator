@@ -19,14 +19,16 @@ HEADEXT := hpp
 SOURCES := $(shell find $(SRCDIR) -type f -name *.$(SRCEXT))
 TESTS := $(shell find $(TESTDIR) -type f -name *.$(SRCEXT))
 APPS := $(shell find $(APPSDIR) -type f -name *.$(SRCEXT))
-HEADERS := $(shell find $(INCDIR) -type f -name *.$(HEADEXT))
 
 OBJECTS := $(patsubst %,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
 TESTOBJECTS := $(patsubst %,$(BUILDDIR)/%,$(TESTS:.$(SRCEXT)=.o))
+BINARIES := $(patsubst $(APPSDIR)/%,bin/%,$(APPS:.$(SRCEXT)=))
 
 COMPILE := $(CC) $(CFLAGS) $(INC) -c 
 MAKEDEPS := $(COMPILE) -MMD
 LINKEDIT := $(CC) $(CFLAGS) $(LIB)
+
+all: $(BINARIES)
 
 bin/%: $(BUILDDIR)/$(APPSDIR)/%.o $(OBJECTS)
 	@echo " Compiling app: $@"
