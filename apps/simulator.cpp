@@ -2,20 +2,30 @@
 #include<cxxopts.hpp>
 #include<random_walk_generator.hpp>
 #include<graph.hpp>
-#include<degree_dist_csv_formatter.hpp>
+#include<dist_csv_formatter.hpp>
 #include<random>
 
 void execute(
-    uint_fast32_t seed,
+    const std::vector<uint_fast32_t>& seeds,
     uint_fast32_t steps,
     uint_fast32_t max_order,
     uint_fast32_t initial_order,
-    std::ostream& out
+    std::ostream& degree_out
     ) {
-  Graph g = RandomWalkGenerator::run(seed, max_order, steps, initial_order);
-  DegreeDistCsvFormatter::format(
-      g.degree_distribution(),
-      out,
+  auto stats = RandomWalkGenerator::accumulate_measure(seeds, max_order, steps, initial_order);
+
+  degree_out << "Degree Distribution:" << std::endl;
+  DistCsvFormatter::format(
+      stats.degree_distribution,
+      degree_out,
+      true); // Print CSV headers
+
+  degree_out << std::endl
+             << "Vertices Per Depth Distribution" << std::endl;
+
+  DistCsvFormatter::format(
+      stats.vertices_per_depth,
+      degree_out,
       true); // Print CSV headers
 }
 
@@ -28,7 +38,8 @@ int main(int argc, char** argv){
 
   options.add_options("params")
     ("s,steps", "steps taken on each addition", cxxopts::value<uint_fast32_t>()->default_value("1"))
-    ("r,seed", "defaults to random", cxxopts::value<uint_fast32_t>())
+    ("seed", "[NON IMPLEMENTED] defaults to random (overrides runs)", cxxopts::value<uint_fast32_t>())
+    ("r,runs", "number of times to run randomly the generator", cxxopts::value<uint_fast32_t>()->default_value("1"))
     ("v,max-order", "[required] desired order (||V||)", cxxopts::value<uint_fast32_t>())
     ("k,initial-order", "order of the complete starting graph", cxxopts::value<uint_fast32_t>()->default_value("3"))
   ;
@@ -47,20 +58,31 @@ int main(int argc, char** argv){
     return 1;
   }
 
-  std::random_device rd;
-  auto seed = options.count("seed") > 0 ? options["seed"].as<uint_fast32_t>() : rd();
-
   auto steps = options["steps"].as<uint_fast32_t>();
   auto initial_order = options["initial-order"].as<uint_fast32_t>();
   auto max_order = options["max-order"].as<uint_fast32_t>();
 
+  std::random_device rd;
+  auto runs = options["runs"].as<uint_fast32_t>();
+
+  // Fill the seeds vector with seeds
+  std::vector<uint_fast32_t> seeds(runs);
+  for(uint_fast32_t i = 0; i < runs; i++){
+    seeds[i] = rd();
+  }
+
   std::cerr << "Running with params:" << std::endl
-    << "Seed: " << seed << std::endl
-    << "Steps: " << steps << std::endl
+    << "Seeds: " << std::endl;
+
+  for(auto s : seeds){
+    std::cerr << " " << s << std::endl;
+  }
+
+  std::cerr << "Steps: " << steps << std::endl
     << "Max Order: " << max_order << std::endl
     << "Initial Order: " << initial_order << std::endl << std::endl;
 
-  execute(seed, steps, max_order, initial_order, std::cout);
+  execute(seeds, steps, max_order, initial_order, std::cout);
 
   return 0;
 }

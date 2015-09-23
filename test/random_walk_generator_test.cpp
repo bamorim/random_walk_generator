@@ -45,3 +45,49 @@ TEST_CASE( "it should grow to max vertex" , "[special]"){
   REQUIRE(g.order() == 10);
   REQUIRE(g.size() == 9);
 }
+
+TEST_CASE( "it should measure the depth correctly" , "[measure]"){
+  SECTION ( "for max order equals initial order" ) {
+    auto stats = RandomWalkGenerator::measure(
+        TEST_SEED,
+        3,
+        1,
+        3
+        );
+    REQUIRE(stats.vertices_per_depth[0] == 3);
+    REQUIRE(stats.vertices_per_depth.size() == 1);
+  }
+
+  SECTION ( "some regression test" ){
+    auto stats = RandomWalkGenerator::measure(
+        TEST_SEED,
+        10,
+        2,
+        3
+        );
+    REQUIRE(stats.vertices_per_depth[0] == 3);
+    REQUIRE(stats.vertices_per_depth[1] == 7);
+    REQUIRE(stats.vertices_per_depth.size() == 2);
+  }
+}
+
+TEST_CASE( "it should measure multiple times" , "[measure]") {
+  SECTION ( "when running once should be equal to one run measurement" ){
+    auto stats = RandomWalkGenerator::measure(
+        TEST_SEED,
+        10,
+        2,
+        3
+        );
+
+    auto acc_stats = RandomWalkGenerator::accumulate_measure(
+        { TEST_SEED },
+        10,
+        2,
+        3
+        );
+
+    REQUIRE( acc_stats.degree_distribution == stats.degree_distribution );
+    REQUIRE( acc_stats.vertices_per_depth == stats.vertices_per_depth );
+  }
+}

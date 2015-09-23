@@ -36,7 +36,7 @@ uint_fast32_t Graph::max_degree() const{
   return degree;
 }
 
-std::vector<uint_fast32_t> Graph::degree_distribution() const{
+const std::vector<uint_fast32_t> Graph::degree_distribution() const{
   std::vector<uint_fast32_t> degree_dist(max_degree()+1,0);
   for(auto v : adjacency_vector) {
     degree_dist[v.size()]++;

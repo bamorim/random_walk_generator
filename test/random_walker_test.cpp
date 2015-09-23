@@ -11,7 +11,7 @@
  * so this is more like a regression test.
  */
 
-TEST_CASE( " The random walker walks " ){
+TEST_CASE( " The random walker walks ", "[random_walker]" ){
   // Lets make a cycle with 10 steps
   Graph g;
   g.add_vertex();

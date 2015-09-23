@@ -15,5 +15,5 @@ class Graph {
     void add_vertex();
     void add_edge(uint_fast32_t, uint_fast32_t);
     const std::vector<uint_fast32_t>* neighbors_of(uint_fast32_t) const;
-    std::vector<uint_fast32_t> degree_distribution() const;
+    const std::vector<uint_fast32_t> degree_distribution() const;
 };
