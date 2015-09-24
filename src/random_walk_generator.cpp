@@ -48,27 +48,25 @@ namespace RandomWalkGenerator {
     std::queue<VerticeDepth> queue;
 
     for(uint_fast32_t start = 0; start < initial_order; start++){
-
       queue.push({start, 0});
       explored[start] = true;
-      while(!queue.empty()){
-        auto curr = queue.back();
-        queue.pop();
+    }
 
-        if(curr.depth >= statistics.vertices_per_depth.size()){
-          statistics.vertices_per_depth.push_back(1);
-        } else {
-          statistics.vertices_per_depth[curr.depth]++;
-        }
+    while(!queue.empty()){
+      auto curr = queue.front();
+      queue.pop();
 
-        for(auto n : *graph.neighbors_of(curr.vertice)) {
-          // Ignore connections with the initial_order vertices
-          if(curr.vertice >= initial_order || n >= initial_order){
-            if(!explored[n]){
-              queue.push({n, curr.depth+1});
-              explored[n] = true;
-            }
-          }
+      // Documentar melhor porque foi dificil de explicar
+      if(curr.depth >= statistics.vertices_per_depth.size()){
+        statistics.vertices_per_depth.push_back(1);
+      } else {
+        statistics.vertices_per_depth[curr.depth]++;
+      }
+
+      for(auto n : *graph.neighbors_of(curr.vertice)) {
+        if(!explored[n]){
+          queue.push({n, curr.depth+1});
+          explored[n] = true;
         }
       }
     }
@@ -77,10 +75,13 @@ namespace RandomWalkGenerator {
     return statistics;
   }
 
+  // TODO: Calculate the space requirements for the accumulate measurments
   RandomWalkGenerator::Statistics accumulate_measure(std::vector<uint_fast32_t> seeds, uint_fast32_t max_order, uint_fast32_t steps, uint_fast32_t initial_order){
     std::vector<RandomWalkGenerator::Statistics> measures;
     RandomWalkGenerator::Statistics statistics;
     measures.reserve(seeds.size());
+
+    // actually is the max degree + 1
     uint_fast32_t max_degree = 0;
     uint_fast32_t max_depth = 0;
 
@@ -94,8 +95,8 @@ namespace RandomWalkGenerator {
     statistics.vertices_per_depth = std::vector<uint_fast32_t>(max_depth,0);
 
     for(auto m : measures){
-      for(uint_fast32_t j = 0; j < m.degree_distribution.size(); j ++){
-        statistics.degree_distribution[j] += m.degree_distribution[j];
+      for(uint_fast32_t i = 0; i < m.degree_distribution.size(); i ++){
+        statistics.degree_distribution[i] += m.degree_distribution[i];
       }
       for(uint_fast32_t j = 0; j < m.vertices_per_depth.size(); j ++){
         statistics.vertices_per_depth[j] += m.vertices_per_depth[j];
