@@ -4,8 +4,9 @@
 #define TEST_SEED 0
 
 Graph run(uint_fast32_t max_vertex, uint_fast32_t steps, uint_fast32_t initial_order){
+  std::mt19937 mt(TEST_SEED);
   return RandomWalkGenerator::run(
-      TEST_SEED, // seed for testing
+      &mt, // seed for testing
       max_vertex,
       steps,
       initial_order
@@ -47,9 +48,10 @@ TEST_CASE( "it should grow to max vertex" , "[special]"){
 }
 
 TEST_CASE( "it should measure the depth correctly" , "[measure]"){
+  std::mt19937 mt(TEST_SEED);
   SECTION ( "for max order equals initial order" ) {
     auto stats = RandomWalkGenerator::measure(
-        TEST_SEED,
+        &mt,
         3,
         1,
         3
@@ -60,7 +62,7 @@ TEST_CASE( "it should measure the depth correctly" , "[measure]"){
 
   SECTION ( "some regression test" ){
     auto stats = RandomWalkGenerator::measure(
-        TEST_SEED,
+        &mt,
         10,
         2,
         3
@@ -72,19 +74,21 @@ TEST_CASE( "it should measure the depth correctly" , "[measure]"){
 }
 
 TEST_CASE( "it should measure multiple times" , "[measure]") {
+  std::mt19937 mt(TEST_SEED);
   SECTION ( "when running once should be equal to one run measurement" ){
     auto stats = RandomWalkGenerator::measure(
-        TEST_SEED,
-        10,
-        2,
-        3
+        &mt, // twister reference
+        10, // max order
+        2, // steps
+        3 // initial order
         );
 
     auto acc_stats = RandomWalkGenerator::accumulate_measure(
-        { TEST_SEED },
-        10,
-        2,
-        3
+        &mt, // twister reference
+        1,  // runs
+        10, // max order
+        2, // steps
+        3 // initial order
         );
 
     REQUIRE( acc_stats.degree_distribution == stats.degree_distribution );

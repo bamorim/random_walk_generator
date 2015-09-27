@@ -17,10 +17,10 @@ namespace RandomWalkGenerator {
     }
   }
 
-  Graph run(uint_fast32_t seed, uint_fast32_t max_order, uint_fast32_t steps, uint_fast32_t initial_order){
+  Graph run(std::mt19937 * mt, uint_fast32_t max_order, uint_fast32_t steps, uint_fast32_t initial_order){
     Graph graph(max_order);
     initialize_complete_graph(graph, initial_order);
-    RandomWalker walker(seed, &graph);
+    RandomWalker walker(mt, &graph);
 
     while(graph.order() < max_order){
       for(uint_fast32_t i = 0; i < steps; i++){
@@ -38,8 +38,8 @@ namespace RandomWalkGenerator {
     uint_fast32_t depth;
   };
 
-  RandomWalkGenerator::Statistics measure(uint_fast32_t seed, uint_fast32_t max_order, uint_fast32_t steps, uint_fast32_t initial_order){
-    auto graph = run(seed, max_order, steps, initial_order);
+  RandomWalkGenerator::Statistics measure(std::mt19937 * mt, uint_fast32_t max_order, uint_fast32_t steps, uint_fast32_t initial_order){
+    auto graph = run(mt, max_order, steps, initial_order);
     RandomWalkGenerator::Statistics statistics;
 
     // Run a BFS on the graph, ignoring the initial_order edges
@@ -76,19 +76,19 @@ namespace RandomWalkGenerator {
   }
 
   // TODO: Calculate the space requirements for the accumulate measurments
-  RandomWalkGenerator::Statistics accumulate_measure(std::vector<uint_fast32_t> seeds, uint_fast32_t max_order, uint_fast32_t steps, uint_fast32_t initial_order){
+  RandomWalkGenerator::Statistics accumulate_measure(std::mt19937 * mt, uint_fast32_t runs, uint_fast32_t max_order, uint_fast32_t steps, uint_fast32_t initial_order){
     std::vector<RandomWalkGenerator::Statistics> measures;
     RandomWalkGenerator::Statistics statistics;
-    measures.reserve(seeds.size());
+    measures.reserve(runs);
 
     // actually is the max degree + 1
     uint_fast32_t max_degree = 0;
     uint_fast32_t max_depth = 0;
 
-    for(auto seed : seeds){//uint_fast32_t i = 0; i < seeds.size(); i++){
-      measures.push_back(measure(seed, max_order, steps, initial_order));
-      max_degree = std::max(measures.back().degree_distribution.size(), max_degree);
-      max_depth = std::max(measures.back().vertices_per_depth.size(), max_depth);
+    for(uint_fast32_t i = 0; i < runs; i++){
+      measures.push_back(measure(mt, max_order, steps, initial_order));
+      max_degree = std::max(measures[i].degree_distribution.size(), max_degree);
+      max_depth = std::max(measures[i].vertices_per_depth.size(), max_depth);
     }
 
     statistics.degree_distribution = std::vector<uint_fast32_t>(max_degree,0);

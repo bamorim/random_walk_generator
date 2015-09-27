@@ -6,13 +6,15 @@
 #include<random>
 
 void execute(
-    const std::vector<uint_fast32_t>& seeds,
+    uint_fast32_t seed,
+    uint_fast32_t runs,
     uint_fast32_t steps,
     uint_fast32_t max_order,
     uint_fast32_t initial_order,
     std::ostream& degree_out
     ) {
-  auto stats = RandomWalkGenerator::accumulate_measure(seeds, max_order, steps, initial_order);
+  std::mt19937 mt(seed);
+  auto stats = RandomWalkGenerator::accumulate_measure(&mt, runs, max_order, steps, initial_order);
 
   degree_out << "Degree Distribution:" << std::endl;
   DistCsvFormatter::format(
@@ -38,7 +40,7 @@ int main(int argc, char** argv){
 
   options.add_options("params")
     ("s,steps", "steps taken on each addition", cxxopts::value<uint_fast32_t>()->default_value("1"))
-    ("seed", "[NON IMPLEMENTED] defaults to random (overrides runs)", cxxopts::value<uint_fast32_t>())
+    ("seed", "defaults to random", cxxopts::value<uint_fast32_t>())
     ("r,runs", "number of times to run randomly the generator", cxxopts::value<uint_fast32_t>()->default_value("1"))
     ("v,max-order", "[required] desired order (||V||)", cxxopts::value<uint_fast32_t>())
     ("k,initial-order", "order of the complete starting graph", cxxopts::value<uint_fast32_t>()->default_value("3"))
@@ -58,31 +60,22 @@ int main(int argc, char** argv){
     return 1;
   }
 
+  std::random_device rd;
   auto steps = options["steps"].as<uint_fast32_t>();
   auto initial_order = options["initial-order"].as<uint_fast32_t>();
   auto max_order = options["max-order"].as<uint_fast32_t>();
-
-  std::random_device rd;
+  auto seed = options["seed"].count() > 0 ? options["seed"].as<uint_fast32_t>() : rd();
   auto runs = options["runs"].as<uint_fast32_t>();
 
   // Fill the seeds vector with seeds
-  std::vector<uint_fast32_t> seeds(runs);
-  for(uint_fast32_t i = 0; i < runs; i++){
-    seeds[i] = rd();
-  }
 
   std::cerr << "Running with params:" << std::endl
-    << "Seeds: " << std::endl;
+    << "  Seed: " << seed << std::endl
+    << "  Steps: " << steps << std::endl
+    << "  Max Order: " << max_order << std::endl
+    << "  Initial Order: " << initial_order << std::endl << std::endl;
 
-  for(auto s : seeds){
-    std::cerr << " " << s << std::endl;
-  }
-
-  std::cerr << "Steps: " << steps << std::endl
-    << "Max Order: " << max_order << std::endl
-    << "Initial Order: " << initial_order << std::endl << std::endl;
-
-  execute(seeds, steps, max_order, initial_order, std::cout);
+  execute(seed, runs, steps, max_order, initial_order, std::cout);
 
   return 0;
 }

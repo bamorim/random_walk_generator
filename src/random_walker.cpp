@@ -1,8 +1,8 @@
 #include<random_walker.hpp>
-RandomWalker::RandomWalker(uint_fast32_t seed, Graph * g) {
+RandomWalker::RandomWalker(std::mt19937 * mt, Graph * g) {
   m_location = 0;
   graph_ptr = g;
-  twister = std::mt19937(seed);
+  twister = mt;
 }
 
 uint_fast32_t RandomWalker::take_step() {
@@ -13,6 +13,6 @@ uint_fast32_t RandomWalker::take_step() {
 
   std::uniform_int_distribution<uint_fast32_t> dist(0,neighbors->size()-1);
 
-  m_location = (*neighbors)[dist(twister)];
+  m_location = (*neighbors)[dist(*twister)];
   return m_location;
 }

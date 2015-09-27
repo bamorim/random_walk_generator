@@ -21,7 +21,8 @@ TEST_CASE( " The random walker walks ", "[random_walker]" ){
   }
   g.add_edge(0,9);
 
-  RandomWalker walker(TEST_SEED, &g);
+  std::mt19937 mt(TEST_SEED);
+  RandomWalker walker(&mt, &g);
 
   SECTION( "it should start on vertex 0" ){
     REQUIRE( walker.location() == 0 );
