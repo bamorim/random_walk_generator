@@ -4,6 +4,8 @@
 #include<graph.hpp>
 #include<dist_csv_formatter.hpp>
 #include<random>
+#include<string>
+#include<fstream>
 
 void execute(
     uint_fast32_t seed,
@@ -11,23 +13,20 @@ void execute(
     uint_fast32_t steps,
     uint_fast32_t max_order,
     uint_fast32_t initial_order,
-    std::ostream& degree_out
+    std::ostream& degree_out,
+    std::ostream& depth_out
     ) {
   std::mt19937 mt(seed);
   auto stats = RandomWalkGenerator::accumulate_measure(&mt, runs, max_order, steps, initial_order);
 
-  degree_out << "Degree Distribution:" << std::endl;
   DistCsvFormatter::format(
       stats.degree_distribution,
       degree_out,
       true); // Print CSV headers
 
-  degree_out << std::endl
-             << "Vertices Per Depth Distribution" << std::endl;
-
   DistCsvFormatter::format(
       stats.vertices_per_depth,
-      degree_out,
+      depth_out,
       true); // Print CSV headers
 }
 
@@ -42,10 +41,12 @@ int main(int argc, char** argv){
     ("s,steps", "steps taken on each addition", cxxopts::value<uint_fast32_t>()->default_value("1"))
     ("seed", "defaults to random", cxxopts::value<uint_fast32_t>())
     ("r,runs", "number of times to run randomly the generator", cxxopts::value<uint_fast32_t>()->default_value("1"))
-    ("v,max-order", "[required] desired order (||V||)", cxxopts::value<uint_fast32_t>())
+    ("n,max-order", "[required] desired order (||V||)", cxxopts::value<uint_fast32_t>())
     ("k,initial-order", "order of the complete starting graph", cxxopts::value<uint_fast32_t>()->default_value("3"))
+    ("o,output", "folder to output the files", cxxopts::value<std::string>()->default_value("."))
   ;
 
+  // Catch exceptions here
   options.parse(argc, argv);
 
   if(options.count("help") > 0) {
@@ -66,8 +67,22 @@ int main(int argc, char** argv){
   auto max_order = options["max-order"].as<uint_fast32_t>();
   auto seed = options["seed"].count() > 0 ? options["seed"].as<uint_fast32_t>() : rd();
   auto runs = options["runs"].as<uint_fast32_t>();
+  auto output_folder = options["output"].as<std::string>();
+  
+  std::ostringstream filename;
+  filename
+    << seed
+    << "_s" << steps
+    << "_n" << max_order
+    << "_k" << initial_order
+    << "_r" << runs;
 
-  // Fill the seeds vector with seeds
+  // Catch exceptions here
+  std::ofstream degree_dist_file;
+  degree_dist_file.open(output_folder + "/" + filename.str() + ".degrees.csv");
+
+  std::ofstream depth_dist_file;
+  depth_dist_file.open(output_folder + "/" + filename.str() + ".depths.csv");
 
   std::cerr << "Running with params:" << std::endl
     << "  Seed: " << seed << std::endl
@@ -75,7 +90,10 @@ int main(int argc, char** argv){
     << "  Max Order: " << max_order << std::endl
     << "  Initial Order: " << initial_order << std::endl << std::endl;
 
-  execute(seed, runs, steps, max_order, initial_order, std::cout);
+  execute(seed, runs, steps, max_order, initial_order, degree_dist_file, depth_dist_file);
+
+  degree_dist_file.close();
+  depth_dist_file.close();
 
   return 0;
 }
