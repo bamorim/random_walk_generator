@@ -15,14 +15,17 @@ $ ./bin/simulator --help
 Usage:
   ./bin/simulator [OPTION...]
 
-    -h, --help  prints the help message
+  -h, --help  prints the help message
 
-     params options:
+ params options:
 
-       -s, --steps arg          steps taken on each addition (default:1)
-    -r, --seed arg           defaults to random
-      -v, --max-order arg      [required] desired order (||V||)
-    -k, --initial-order arg  order of the complete starting graph (default:3)
+  -s, --steps arg          steps taken on each addition (default:1)
+      --seed arg           defaults to random
+  -r, --runs arg           number of times to run randomly the generator
+                           (default:1)
+  -n, --max-order arg      [required] desired order (||V||)
+  -k, --initial-order arg  order of the complete starting graph (default:3)
+  -o, --output arg         folder to output the files (default:.)
 ```
 
 ## Testing
