@@ -71,11 +71,11 @@ int main(int argc, char** argv){
   
   std::ostringstream filename;
   filename
-    << seed
-    << "_s" << steps
+    << "s"  << steps
     << "_n" << max_order
     << "_k" << initial_order
-    << "_r" << runs;
+    << "_r" << runs
+    << "_"  << seed;
 
   // Catch exceptions here
   std::ofstream degree_dist_file;
