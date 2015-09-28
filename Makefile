@@ -2,8 +2,8 @@
 # TODO: Add APPS for compiling executables from a different folder, skipping .o objects
 # 
 
-CC := clang++
-CFLAGS := -std=c++1y -Wall
+CC := g++
+CFLAGS := -std=c++14 -Wall -O3
 LIB := -L lib
 INC := -I include
 
