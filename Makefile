@@ -4,7 +4,8 @@
 
 CC := g++
 CFLAGS := -std=c++14 -Wall -O3
-LIB := -L lib
+LIB := -Llib
+DISTFLAGS := -static-libstdc++
 INC := -I include
 
 SRCDIR := src
@@ -32,7 +33,13 @@ all: $(BINARIES)
 
 bin/%: $(BUILDDIR)/$(APPSDIR)/%.o $(OBJECTS)
 	@echo " Compiling app: $@"
-	@$(LINKEDIT) -o $@ $^
+	$(LINKEDIT) -o $@ $^
+
+# Standalone distributable file
+bin/dist/%: $(BUILDDIR)/$(APPSDIR)/%.o $(OBJECTS)
+	@mkdir -p bin/dist/
+	@echo " Compiling distributable app: $@"
+	$(LINKEDIT) $(DISTFLAGS) -o $@ $^
 
 bin/test: $(OBJECTS) $(TESTOBJECTS)
 	@echo " Linking test executable..."
