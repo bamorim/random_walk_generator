@@ -77,29 +77,24 @@ namespace RandomWalkGenerator {
 
   // TODO: Calculate the space requirements for the accumulate measurments
   RandomWalkGenerator::Statistics accumulate_measure(std::mt19937 * mt, uint_fast32_t runs, uint_fast32_t max_order, uint_fast32_t steps, uint_fast32_t initial_order){
-    std::vector<RandomWalkGenerator::Statistics> measures;
+    RandomWalkGenerator::Statistics measurement;
     RandomWalkGenerator::Statistics statistics;
-    measures.reserve(runs);
 
-    // actually is the max degree + 1
-    uint_fast32_t max_degree = 0;
-    uint_fast32_t max_depth = 0;
-
-    for(uint_fast32_t i = 0; i < runs; i++){
-      measures.push_back(measure(mt, max_order, steps, initial_order));
-      max_degree = std::max(measures[i].degree_distribution.size(), max_degree);
-      max_depth = std::max(measures[i].vertices_per_depth.size(), max_depth);
-    }
-
-    statistics.degree_distribution = std::vector<uint_fast32_t>(max_degree,0);
-    statistics.vertices_per_depth = std::vector<uint_fast32_t>(max_depth,0);
-
-    for(auto m : measures){
-      for(uint_fast32_t i = 0; i < m.degree_distribution.size(); i ++){
-        statistics.degree_distribution[i] += m.degree_distribution[i];
+    for(uint_fast32_t run = 0; run < runs; run++){
+      measurement = measure(mt, max_order, steps, initial_order);
+      for(uint_fast32_t i = 0; i < measurement.degree_distribution.size(); i ++){
+        if(statistics.degree_distribution.size() > i) {
+          statistics.degree_distribution[i] += measurement.degree_distribution[i];
+        } else {
+          statistics.degree_distribution.push_back(measurement.degree_distribution[i]);
+        }
       }
-      for(uint_fast32_t j = 0; j < m.vertices_per_depth.size(); j ++){
-        statistics.vertices_per_depth[j] += m.vertices_per_depth[j];
+      for(uint_fast32_t j = 0; j < measurement.vertices_per_depth.size(); j ++){
+        if(statistics.vertices_per_depth.size() > j) {
+          statistics.vertices_per_depth[j] += measurement.vertices_per_depth[j];
+        } else {
+          statistics.vertices_per_depth.push_back(measurement.vertices_per_depth[j]);
+        }
       }
     }
 
