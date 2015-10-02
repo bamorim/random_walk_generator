@@ -1,4 +1,5 @@
 library(ggplot2)
+library(scales)
 filename <- "v100r100.degrees"
 args <- commandArgs(TRUE)
 stopifnot(length(args) >= 2)
@@ -12,9 +13,18 @@ png(file = output, width = 1200, height = 1000)
   plot <- ggplot()
   data <- data.frame()
   for( i in 1:length(input) ){
-    degrees <- read.csv(input[i], header = TRUE)
+    degrees <- read.csv(input[i], header = TRUE)# To remove first line: [-1,1:2]
     mod_degree <- data.frame(degrees[1], 1 - cumsum(degrees[2]) / sum(degrees[2]), group=input[i])
     data <- rbind(data, mod_degree)
   }
-  ggplot() + geom_point(data=data, aes(x=value, y=count, color=group)) + scale_x_log10() + scale_y_log10() + theme(legend.position = "bottom")
+  ggplot() +
+    geom_point(data=data, aes(x=value, y=count, color=group)) +
+    scale_x_log10(
+                  labels = trans_format("log10", math_format(10^.x)),
+                  breaks=trans_breaks("log10", function(x) 10^x, n=4)) +
+    scale_y_log10(
+                  labels = trans_format("log10", math_format(10^.x)),
+                  breaks = trans_breaks("log10", function(x) 10^x, n=4)) +
+    theme(legend.position = "bottom") +
+    theme(panel.grid.minor = element_line(color="blue", linetype="dotted"), panel.grid.major = element_line(color="blue", linetype="dotted"))
 dev.off()
