@@ -3,13 +3,14 @@
 
 #define TEST_SEED 0
 
-Graph run(uint_fast32_t max_vertex, uint_fast32_t steps, uint_fast32_t initial_order){
+Graph run(uint_fast32_t max_vertex, uint_fast32_t steps, uint_fast32_t initial_order, bool selfloop = false){
   std::mt19937 mt(TEST_SEED);
   return RandomWalkGenerator::run(
       &mt, // seed for testing
       max_vertex,
       steps,
-      initial_order
+      initial_order,
+      selfloop
       );
 };
 
@@ -17,7 +18,8 @@ Graph run_no_steps(uint_fast32_t initial_order){
   return run(
       1, // max vertex
       0, // steps
-      initial_order
+      initial_order,
+      false
       );
 };
 
@@ -41,6 +43,15 @@ TEST_CASE( "it should start with a complete graph" ){
   }
 }
 
+TEST_CASE( "when starting with selfloop" ){
+  SECTION ( "it should have increased degree" ){
+    Graph g = run(1,0,1,true);
+    REQUIRE(g.order() == 1);
+    REQUIRE(g.size() == 1);
+    REQUIRE(g.neighbors_of(0)->size() == 2);
+  }
+}
+
 TEST_CASE( "it should grow to max vertex" , "[special]"){
   Graph g = run(10, 1, 1);
   REQUIRE(g.order() == 10);
@@ -54,7 +65,8 @@ TEST_CASE( "it should measure the depth correctly" , "[measure]"){
         &mt,
         3,
         1,
-        3
+        3,
+        false
         );
     REQUIRE(stats.vertices_per_depth[0] == 3);
     REQUIRE(stats.vertices_per_depth.size() == 1);
@@ -65,7 +77,8 @@ TEST_CASE( "it should measure the depth correctly" , "[measure]"){
         &mt,
         10,
         2,
-        3
+        3,
+        false
         );
     REQUIRE(stats.vertices_per_depth[0] == 3);
     REQUIRE(stats.vertices_per_depth[1] == 7);
@@ -80,7 +93,8 @@ TEST_CASE( "it should measure multiple times" , "[measure]") {
         &mt, // twister reference
         10, // max order
         2, // steps
-        3 // initial order
+        3, // initial order
+        false // selfloop
         );
 
     auto acc_stats = RandomWalkGenerator::accumulate_measure(
@@ -88,7 +102,8 @@ TEST_CASE( "it should measure multiple times" , "[measure]") {
         1,  // runs
         10, // max order
         2, // steps
-        3 // initial order
+        3, // initial order
+        false
         );
 
     REQUIRE( acc_stats.degree_distribution == stats.degree_distribution );

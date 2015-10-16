@@ -4,22 +4,25 @@
 #include<algorithm>
 
 namespace RandomWalkGenerator {
-  void initialize_complete_graph(Graph& graph, uint_fast32_t order){
+  void initialize_complete_graph(Graph& graph, uint_fast32_t order, bool selfloop){
     uint_fast32_t i,j;
     for(i = 0; i < order; i++){
       graph.add_vertex();
     }
 
     for(i = 0; i < order; i++){
+      if(selfloop){
+        graph.add_edge(i,i);
+      }
       for(j = i+1; j < order; j++){
         graph.add_edge(i,j);
       }
     }
   }
 
-  Graph run(std::mt19937 * mt, uint_fast32_t max_order, uint_fast32_t steps, uint_fast32_t initial_order){
+  Graph run(std::mt19937 * mt, uint_fast32_t max_order, uint_fast32_t steps, uint_fast32_t initial_order, bool selfloop){
     Graph graph(max_order);
-    initialize_complete_graph(graph, initial_order);
+    initialize_complete_graph(graph, initial_order, selfloop);
     RandomWalker walker(mt, &graph);
 
     while(graph.order() < max_order){
@@ -38,8 +41,8 @@ namespace RandomWalkGenerator {
     uint_fast32_t depth;
   };
 
-  RandomWalkGenerator::Statistics measure(std::mt19937 * mt, uint_fast32_t max_order, uint_fast32_t steps, uint_fast32_t initial_order){
-    auto graph = run(mt, max_order, steps, initial_order);
+  RandomWalkGenerator::Statistics measure(std::mt19937 * mt, uint_fast32_t max_order, uint_fast32_t steps, uint_fast32_t initial_order, bool selfloop){
+    auto graph = run(mt, max_order, steps, initial_order, selfloop);
     RandomWalkGenerator::Statistics statistics;
 
     // Run a BFS on the graph, ignoring the initial_order edges
@@ -76,12 +79,12 @@ namespace RandomWalkGenerator {
   }
 
   // TODO: Calculate the space requirements for the accumulate measurments
-  RandomWalkGenerator::Statistics accumulate_measure(std::mt19937 * mt, uint_fast32_t runs, uint_fast32_t max_order, uint_fast32_t steps, uint_fast32_t initial_order){
+  RandomWalkGenerator::Statistics accumulate_measure(std::mt19937 * mt, uint_fast32_t runs, uint_fast32_t max_order, uint_fast32_t steps, uint_fast32_t initial_order, bool selfloop){
     RandomWalkGenerator::Statistics measurement;
     RandomWalkGenerator::Statistics statistics;
 
     for(uint_fast32_t run = 0; run < runs; run++){
-      measurement = measure(mt, max_order, steps, initial_order);
+      measurement = measure(mt, max_order, steps, initial_order, selfloop);
       for(uint_fast32_t i = 0; i < measurement.degree_distribution.size(); i ++){
         if(statistics.degree_distribution.size() > i) {
           statistics.degree_distribution[i] += measurement.degree_distribution[i];

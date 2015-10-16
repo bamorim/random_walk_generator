@@ -13,21 +13,29 @@ void execute(
     uint_fast32_t steps,
     uint_fast32_t max_order,
     uint_fast32_t initial_order,
-    std::ostream& degree_out,
-    std::ostream& depth_out
+    bool selfloop,
+    std::string output_folder,
+    std::string filename
     ) {
   std::mt19937 mt(seed);
-  auto stats = RandomWalkGenerator::accumulate_measure(&mt, runs, max_order, steps, initial_order);
+  auto stats = RandomWalkGenerator::accumulate_measure(&mt, runs, max_order, steps, initial_order, selfloop);
 
+  std::ofstream degree_out;
+  degree_out.open(output_folder + "/" + filename + ".degrees.csv");
   DistCsvFormatter::format(
       stats.degree_distribution,
       degree_out,
       true); // Print CSV headers
 
+  std::ofstream depth_out;
+  depth_out.open(output_folder + "/" + filename + ".depths.csv");
   DistCsvFormatter::format(
       stats.vertices_per_depth,
       depth_out,
       true); // Print CSV headers
+
+  degree_out.close();
+  depth_out.close();
 }
 
 int main(int argc, char** argv){
@@ -44,6 +52,7 @@ int main(int argc, char** argv){
     ("n,max-order", "[required] desired order (||V||)", cxxopts::value<uint_fast32_t>())
     ("k,initial-order", "order of the complete starting graph", cxxopts::value<uint_fast32_t>()->default_value("3"))
     ("o,output", "folder to output the files", cxxopts::value<std::string>()->default_value("."))
+    ("selfloop", "enable selfloop on initial graph")
   ;
 
   // Catch exceptions here
@@ -68,32 +77,29 @@ int main(int argc, char** argv){
   auto seed = options["seed"].count() > 0 ? options["seed"].as<uint_fast32_t>() : rd();
   auto runs = options["runs"].as<uint_fast32_t>();
   auto output_folder = options["output"].as<std::string>();
+  auto selfloop = options["selfloop"].as<bool>();
   
   std::ostringstream filename;
   filename
     << "s"  << steps
     << "_n" << max_order
     << "_k" << initial_order
-    << "_r" << runs
-    << "_"  << seed;
+    << "_r" << runs;
+
+  if(selfloop)
+    filename << "_sl";
+
+  filename << "_" << seed;
 
   // Catch exceptions here
-  std::ofstream degree_dist_file;
-  degree_dist_file.open(output_folder + "/" + filename.str() + ".degrees.csv");
-
-  std::ofstream depth_dist_file;
-  depth_dist_file.open(output_folder + "/" + filename.str() + ".depths.csv");
-
   std::cerr << "Running with params:" << std::endl
     << "  Seed: " << seed << std::endl
     << "  Steps: " << steps << std::endl
     << "  Max Order: " << max_order << std::endl
     << "  Initial Order: " << initial_order << std::endl << std::endl;
 
-  execute(seed, runs, steps, max_order, initial_order, degree_dist_file, depth_dist_file);
+  execute(seed, runs, steps, max_order, initial_order, selfloop, output_folder, filename.str());
 
-  degree_dist_file.close();
-  depth_dist_file.close();
 
   return 0;
 }
