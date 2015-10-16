@@ -6,6 +6,12 @@
 #include<random>
 #include<string>
 #include<fstream>
+#include<sys/stat.h>
+
+bool file_exists(std::string fname){
+  struct stat buffer;
+  return (stat (fname.c_str(), &buffer) == 0);
+}
 
 void execute(
     uint_fast32_t seed,
@@ -17,18 +23,26 @@ void execute(
     std::string output_folder,
     std::string filename
     ) {
+  std::string degree_fname = output_folder + "/" + filename + ".degrees.csv";
+  std::string depth_fname = output_folder + "/" + filename + ".depths.csv";
+
+  if(file_exists(depth_fname) && file_exists(degree_fname)){
+    // Stop execution if both files already exists
+    return;
+  }
+
   std::mt19937 mt(seed);
   auto stats = RandomWalkGenerator::accumulate_measure(&mt, runs, max_order, steps, initial_order, selfloop);
 
   std::ofstream degree_out;
-  degree_out.open(output_folder + "/" + filename + ".degrees.csv");
+  degree_out.open(degree_fname);
   DistCsvFormatter::format(
       stats.degree_distribution,
       degree_out,
       true); // Print CSV headers
 
   std::ofstream depth_out;
-  depth_out.open(output_folder + "/" + filename + ".depths.csv");
+  depth_out.open(depth_fname);
   DistCsvFormatter::format(
       stats.vertices_per_depth,
       depth_out,
