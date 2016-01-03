@@ -61,25 +61,27 @@ TEST_CASE( "it should grow to max vertex" , "[special]"){
 TEST_CASE( "it should measure the depth correctly" , "[measure]"){
   std::mt19937 mt(TEST_SEED);
   SECTION ( "for max order equals initial order" ) {
-    auto stats = RandomWalkGenerator::measure(
+    auto graph = RandomWalkGenerator::run(
         &mt,
         3,
         1,
         3,
         false
         );
+    auto stats = RandomWalkGenerator::measure(graph,3);
     REQUIRE(stats.vertices_per_depth[0] == 3);
     REQUIRE(stats.vertices_per_depth.size() == 1);
   }
 
   SECTION ( "some regression test" ){
-    auto stats = RandomWalkGenerator::measure(
+    auto graph = RandomWalkGenerator::run(
         &mt,
         10,
         2,
         3,
         false
         );
+    auto stats = RandomWalkGenerator::measure(graph,3);
     REQUIRE(stats.vertices_per_depth[0] == 3);
     REQUIRE(stats.vertices_per_depth[1] == 7);
     REQUIRE(stats.vertices_per_depth.size() == 2);
@@ -88,23 +90,19 @@ TEST_CASE( "it should measure the depth correctly" , "[measure]"){
 
 TEST_CASE( "it should measure multiple times" , "[measure]") {
   std::mt19937 mt(TEST_SEED);
+  auto runner = [&mt](){ return RandomWalkGenerator::run(
+      &mt, // twister reference
+      10, // max order
+      2, // steps
+      3, // initial order
+      false // selfloop
+      );
+  };
   SECTION ( "when running once should be equal to one run measurement" ){
-    auto stats = RandomWalkGenerator::measure(
-        &mt, // twister reference
-        10, // max order
-        2, // steps
-        3, // initial order
-        false // selfloop
-        );
+    auto graph = runner();
+    auto stats = RandomWalkGenerator::measure(graph,3);
 
-    auto acc_stats = RandomWalkGenerator::accumulate_measure(
-        &mt, // twister reference
-        1,  // runs
-        10, // max order
-        2, // steps
-        3, // initial order
-        false
-        );
+    auto acc_stats = RandomWalkGenerator::accumulate_measure(runner,1,3);
 
     REQUIRE( acc_stats.degree_distribution == stats.degree_distribution );
     REQUIRE( acc_stats.vertices_per_depth == stats.vertices_per_depth );

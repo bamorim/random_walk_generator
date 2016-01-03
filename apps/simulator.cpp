@@ -13,45 +13,6 @@ bool file_exists(std::string fname){
   return (stat (fname.c_str(), &buffer) == 0);
 }
 
-void execute(
-    uint_fast32_t seed,
-    uint_fast32_t runs,
-    uint_fast32_t steps,
-    uint_fast32_t max_order,
-    uint_fast32_t initial_order,
-    bool selfloop,
-    std::string output_folder,
-    std::string filename
-    ) {
-  std::string degree_fname = output_folder + "/" + filename + ".degrees.csv";
-  std::string depth_fname = output_folder + "/" + filename + ".depths.csv";
-
-  if(file_exists(depth_fname) && file_exists(degree_fname)){
-    // Stop execution if both files already exists
-    return;
-  }
-
-  std::mt19937 mt(seed);
-  auto stats = RandomWalkGenerator::accumulate_measure(&mt, runs, max_order, steps, initial_order, selfloop);
-
-  std::ofstream degree_out;
-  degree_out.open(degree_fname);
-  DistCsvFormatter::format(
-      stats.degree_distribution,
-      degree_out,
-      true); // Print CSV headers
-
-  std::ofstream depth_out;
-  depth_out.open(depth_fname);
-  DistCsvFormatter::format(
-      stats.vertices_per_depth,
-      depth_out,
-      true); // Print CSV headers
-
-  degree_out.close();
-  depth_out.close();
-}
-
 int main(int argc, char** argv){
   cxxopts::Options options(argv[0]);
 
@@ -92,7 +53,12 @@ int main(int argc, char** argv){
   auto runs = options["runs"].as<uint_fast32_t>();
   auto output_folder = options["output"].as<std::string>();
   auto selfloop = options["selfloop"].as<bool>();
+
+  // Here we should swap the runner depending on which version of the runner we want to run
+  std::mt19937 mt(seed);
+  auto runner = [&mt, max_order,steps,initial_order,selfloop]() { return RandomWalkGenerator::run(&mt, max_order, steps, initial_order, selfloop); };
   
+  // Setup output filenames
   std::ostringstream filename;
   filename
     << "s"  << steps
@@ -112,8 +78,36 @@ int main(int argc, char** argv){
     << "  Max Order: " << max_order << std::endl
     << "  Initial Order: " << initial_order << std::endl << std::endl;
 
-  execute(seed, runs, steps, max_order, initial_order, selfloop, output_folder, filename.str());
+  // Setting the out files
+  std::string degree_fname = output_folder + "/" + filename.str() + ".degrees.csv";
+  std::string depth_fname = output_folder + "/" + filename.str() + ".depths.csv";
 
+  if(file_exists(depth_fname) && file_exists(degree_fname)){
+    // Stop execution if both files already exists
+    return 0;
+  }
+
+  // Do the actual run
+  auto stats = RandomWalkGenerator::accumulate_measure(runner, runs, initial_order);
+
+  // Save the measurements
+  std::ofstream degree_out;
+  degree_out.open(degree_fname);
+  DistCsvFormatter::format(
+      stats.degree_distribution,
+      degree_out,
+      true); // Print CSV headers
+
+  std::ofstream depth_out;
+  depth_out.open(depth_fname);
+  DistCsvFormatter::format(
+      stats.vertices_per_depth,
+      depth_out,
+      true); // Print CSV headers
+
+  // Close the files
+  degree_out.close();
+  depth_out.close();
 
   return 0;
 }

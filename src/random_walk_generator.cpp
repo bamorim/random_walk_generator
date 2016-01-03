@@ -41,8 +41,7 @@ namespace RandomWalkGenerator {
     uint_fast32_t depth;
   };
 
-  RandomWalkGenerator::Statistics measure(std::mt19937 * mt, uint_fast32_t max_order, uint_fast32_t steps, uint_fast32_t initial_order, bool selfloop){
-    auto graph = run(mt, max_order, steps, initial_order, selfloop);
+  RandomWalkGenerator::Statistics measure(Graph& graph,uint_fast32_t initial_order){
     RandomWalkGenerator::Statistics statistics;
 
     // Run a BFS on the graph, ignoring the initial_order edges
@@ -78,27 +77,26 @@ namespace RandomWalkGenerator {
     return statistics;
   }
 
+  void sum_list_to(std::vector<uint_fast32_t>& from, std::vector<uint_fast32_t>& to) {
+    for(uint_fast32_t i = 0; i < from.size(); i ++){
+      if(to.size() > i) {
+        to[i] += from[i];
+      } else {
+        to.push_back(from[i]);
+      }
+    }
+  }
+
   // TODO: Calculate the space requirements for the accumulate measurments
-  RandomWalkGenerator::Statistics accumulate_measure(std::mt19937 * mt, uint_fast32_t runs, uint_fast32_t max_order, uint_fast32_t steps, uint_fast32_t initial_order, bool selfloop){
+  RandomWalkGenerator::Statistics accumulate_measure(std::function<Graph(void)> runner, uint_fast32_t runs, uint_fast32_t initial_order){
     RandomWalkGenerator::Statistics measurement;
     RandomWalkGenerator::Statistics statistics;
 
     for(uint_fast32_t run = 0; run < runs; run++){
-      measurement = measure(mt, max_order, steps, initial_order, selfloop);
-      for(uint_fast32_t i = 0; i < measurement.degree_distribution.size(); i ++){
-        if(statistics.degree_distribution.size() > i) {
-          statistics.degree_distribution[i] += measurement.degree_distribution[i];
-        } else {
-          statistics.degree_distribution.push_back(measurement.degree_distribution[i]);
-        }
-      }
-      for(uint_fast32_t j = 0; j < measurement.vertices_per_depth.size(); j ++){
-        if(statistics.vertices_per_depth.size() > j) {
-          statistics.vertices_per_depth[j] += measurement.vertices_per_depth[j];
-        } else {
-          statistics.vertices_per_depth.push_back(measurement.vertices_per_depth[j]);
-        }
-      }
+      Graph graph = runner();
+      measurement = measure(graph, initial_order);
+      sum_list_to(measurement.degree_distribution, statistics.degree_distribution);
+      sum_list_to(measurement.vertices_per_depth, statistics.vertices_per_depth);
     }
 
     return statistics;
