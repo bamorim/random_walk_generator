@@ -36,6 +36,29 @@ namespace RandomWalkGenerator {
     return graph;
   }
 
+  Graph run_one_or_two(std::mt19937 * mt, uint_fast32_t max_order, double p, uint_fast32_t initial_order, bool selfloop){
+    Graph graph(max_order);
+    initialize_complete_graph(graph, initial_order, selfloop);
+
+    std::uniform_real_distribution<> dist(0,1);
+
+    RandomWalker walker(mt, &graph);
+
+    while(graph.order() < max_order) {
+      walker.take_step();
+
+      // Take another step with probability 1-p
+      if(dist(*mt) > p){
+        walker.take_step();
+      }
+
+      graph.add_vertex();
+      graph.add_edge(graph.order()-1, walker.location());
+    }
+
+    return graph;
+  }
+
   struct VerticeDepth {
     uint_fast32_t vertice;
     uint_fast32_t depth;

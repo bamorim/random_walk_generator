@@ -1,5 +1,6 @@
 #include<random>
 #include<graph.hpp>
+#include<functional>
 #pragma once
 
 class RandomWalker {

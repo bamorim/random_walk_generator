@@ -6,11 +6,20 @@
 #include<random>
 #include<string>
 #include<fstream>
+#include<functional>
 #include<sys/stat.h>
 
 bool file_exists(std::string fname){
   struct stat buffer;
   return (stat (fname.c_str(), &buffer) == 0);
+}
+
+std::string p_to_s(double p){
+  std::ostringstream strs;
+  strs << p;
+  std::string str = strs.str();
+  str.erase(std::remove(str.begin(), str.end(), '.'),str.end());
+  return str;
 }
 
 int main(int argc, char** argv){
@@ -27,6 +36,7 @@ int main(int argc, char** argv){
     ("n,max-order", "[required] desired order (||V||)", cxxopts::value<uint_fast32_t>())
     ("k,initial-order", "order of the complete starting graph", cxxopts::value<uint_fast32_t>()->default_value("3"))
     ("o,output", "folder to output the files", cxxopts::value<std::string>()->default_value("."))
+    ("p,prob", "(this changes the behaviour to the 1-or-2 step mode) The walker takes one step with probability p and two steps with probability 1-p", cxxopts::value<double>()->default_value("-1.0"))
     ("selfloop", "enable selfloop on initial graph")
   ;
 
@@ -52,16 +62,40 @@ int main(int argc, char** argv){
   auto seed = options["seed"].count() > 0 ? options["seed"].as<uint_fast32_t>() : rd();
   auto runs = options["runs"].as<uint_fast32_t>();
   auto output_folder = options["output"].as<std::string>();
+  auto prob = options["prob"].as<double>();
   auto selfloop = options["selfloop"].as<bool>();
 
   // Here we should swap the runner depending on which version of the runner we want to run
   std::mt19937 mt(seed);
-  auto runner = [&mt, max_order,steps,initial_order,selfloop]() { return RandomWalkGenerator::run(&mt, max_order, steps, initial_order, selfloop); };
-  
-  // Setup output filenames
+
+  std::function<Graph(void)> runner;
   std::ostringstream filename;
+
+  if(prob > 0) {
+    runner = [&mt, max_order, prob, initial_order, selfloop](){
+      return RandomWalkGenerator::run_one_or_two(&mt, max_order, prob, initial_order, selfloop);
+    };
+
+    filename << "p"  << p_to_s(prob);
+    std::cerr << "Running 1-or-2 runner with params:" << std::endl
+      << "  Seed: " << seed << std::endl
+      << "  Prob: " << prob << std::endl
+      << "  Max Order: " << max_order << std::endl
+      << "  Initial Order: " << initial_order << std::endl << std::endl;
+  } else {
+    runner = [&mt, max_order,steps,initial_order,selfloop]() { 
+      return RandomWalkGenerator::run(&mt, max_order, steps, initial_order, selfloop);
+    };
+
+    filename << "s"  << steps;
+    std::cerr << "Running default runner with params:" << std::endl
+      << "  Seed: " << seed << std::endl
+      << "  Steps: " << steps << std::endl
+      << "  Max Order: " << max_order << std::endl
+      << "  Initial Order: " << initial_order << std::endl << std::endl;
+  }
+  
   filename
-    << "s"  << steps
     << "_n" << max_order
     << "_k" << initial_order
     << "_r" << runs;
@@ -71,12 +105,6 @@ int main(int argc, char** argv){
 
   filename << "_" << seed;
 
-  // Catch exceptions here
-  std::cerr << "Running with params:" << std::endl
-    << "  Seed: " << seed << std::endl
-    << "  Steps: " << steps << std::endl
-    << "  Max Order: " << max_order << std::endl
-    << "  Initial Order: " << initial_order << std::endl << std::endl;
 
   // Setting the out files
   std::string degree_fname = output_folder + "/" + filename.str() + ".degrees.csv";
