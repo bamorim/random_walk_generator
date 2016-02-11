@@ -16,7 +16,7 @@ bool file_exists(std::string fname){
 
 std::string p_to_s(double p){
   std::ostringstream strs;
-  strs << p;
+  strs << std::scientific << p;
   std::string str = strs.str();
   str.erase(std::remove(str.begin(), str.end(), '.'),str.end());
   return str;
