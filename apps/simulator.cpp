@@ -25,80 +25,120 @@ std::string p_to_s(double p){
 int main(int argc, char** argv){
   cxxopts::Options options(argv[0]);
 
-  options.add_options("")
-    ("h,help", "prints the help message")
+  options.add_options("Steps")
+    ("m,mode", "const | prob | log | pow | exp", cxxopts::value<std::string>()->default_value("const"))
+    ("a,parama", "parameter a for step functions", cxxopts::value<double>()->default_value("1.0"))
+    ("b,paramb", "parameter b for step functions", cxxopts::value<double>()->default_value("2.0"))
   ;
 
-  options.add_options("params")
-    ("s,steps", "steps taken on each addition", cxxopts::value<uint_fast32_t>()->default_value("1"))
+  options.add_options("Initial State")
     ("seed", "defaults to random", cxxopts::value<uint_fast32_t>())
+    ("selfloop", "enable selfloop on initial graph")
+    ("k,initial-order", "order of the complete starting graph", cxxopts::value<uint_fast32_t>()->default_value("3"))
+  ;
+
+  options.add_options("Other")
     ("r,runs", "number of times to run randomly the generator", cxxopts::value<uint_fast32_t>()->default_value("1"))
     ("n,max-order", "[required] desired order (||V||)", cxxopts::value<uint_fast32_t>())
-    ("k,initial-order", "order of the complete starting graph", cxxopts::value<uint_fast32_t>()->default_value("3"))
     ("o,output", "folder to output the files", cxxopts::value<std::string>()->default_value("."))
-    ("p,prob", "(this changes the behaviour to the 1-or-2 step mode) The walker takes one step with probability p and two steps with probability 1-p", cxxopts::value<double>()->default_value("-1.0"))
-    ("selfloop", "enable selfloop on initial graph")
+    ("h,help", "prints the help message")
   ;
 
   // Catch exceptions here
   options.parse(argc, argv);
 
+  std::function<void()> show_help = [options](){
+    std::cout << "Steps can run in the following modes:" << std::endl
+      << "const: S(n) = a; a > 0 (DEFAULT)" << std::endl
+      << "prob: S(n) = 1 (with probability p) or 2 (with probability 1-p); 0 <= p <= 1" << std::endl
+      << "log: S(n) = b*log_a(n); b > 0; a > 1" << std::endl
+      << "pow: S(n) = b*n^a; b > 0; a >= 0" << std::endl
+      << "exp: S(n) = b*a^n; b > 0; a >= 1" << std::endl << std::endl;
+
+    std::cout << options.help({"Steps", "Initial State", "Other"}) << std::endl;
+  };
+
+  std::function<void(std::string)> error_with_help = [show_help](auto err) {
+    std::cout << err << std::endl << std::endl;
+    show_help();
+  };
+
   if(options.count("help") > 0) {
-    std::cout << options.help({"", "params"}) << std::endl;
+    show_help();
     return 0;
   }
 
   if(options.count("max-order") == 0){
-    std::cout 
-      << "Invalid usage." << std::endl
-      << options.help({"", "params"}) << std::endl;
+    error_with_help("Max order should be > 0.");
     return 1;
   }
 
-  std::random_device rd;
-  auto steps = options["steps"].as<uint_fast32_t>();
+  // Initial State options
   auto initial_order = options["initial-order"].as<uint_fast32_t>();
-  auto max_order = options["max-order"].as<uint_fast32_t>();
+  auto selfloop = options["selfloop"].as<bool>();
+  RandomWalkGenerator::InitialState initial_state = {initial_order, selfloop};
+
+  std::random_device rd;
   auto seed = options["seed"].count() > 0 ? options["seed"].as<uint_fast32_t>() : rd();
+
+  // Other options
+  auto max_order = options["max-order"].as<uint_fast32_t>();
   auto runs = options["runs"].as<uint_fast32_t>();
   auto output_folder = options["output"].as<std::string>();
-  auto prob = options["prob"].as<double>();
-  auto selfloop = options["selfloop"].as<bool>();
+
+  // Steps options
+  auto mode = options["mode"].as<std::string>();
+  auto parama = options["parama"].as<double>();
+  auto paramb = options["paramb"].as<double>();
 
   // Here we should swap the runner depending on which version of the runner we want to run
   std::mt19937 mt(seed);
 
-  std::function<Graph(void)> runner;
   std::ostringstream filename;
 
-  if(prob > 0) {
-    runner = [&mt, max_order, prob, initial_order, selfloop](){
-      return RandomWalkGenerator::run_one_or_two(&mt, max_order, prob, initial_order, selfloop);
-    };
-
-    filename << "p"  << p_to_s(prob);
-    std::cerr << "Running 1-or-2 runner with params:" << std::endl
-      << "  Seed: " << seed << std::endl
-      << "  Prob: " << prob << std::endl
-      << "  Max Order: " << max_order << std::endl
-      << "  Initial Order: " << initial_order << std::endl << std::endl;
-  } else {
-    runner = [&mt, max_order,steps,initial_order,selfloop]() { 
-      return RandomWalkGenerator::run(&mt, max_order, steps, initial_order, selfloop);
-    };
-
-    filename << "s"  << steps;
-    std::cerr << "Running default runner with params:" << std::endl
-      << "  Seed: " << seed << std::endl
-      << "  Steps: " << steps << std::endl
-      << "  Max Order: " << max_order << std::endl
-      << "  Initial Order: " << initial_order << std::endl << std::endl;
-  }
+  RandomWalkGenerator::StepFunction sf;
   
+  // TODO: Add validations here
+
+  filename << mode << "_a";
+
+  if(mode == "const"){
+    sf = RandomWalkGenerator::steps_const(round(parama));
+    filename << round(parama);
+
+  } else if (mode == "prob") {
+    sf = RandomWalkGenerator::steps_prob(&mt, parama);
+    filename << p_to_s(parama);
+
+  } else if (mode == "log") {
+    sf = RandomWalkGenerator::steps_log(parama,paramb);
+    filename << p_to_s(parama) << "_b" << p_to_s(paramb);
+
+  } else if (mode == "pow") {
+    sf = RandomWalkGenerator::steps_pow(parama,paramb);
+    filename << p_to_s(parama) << "_b" << p_to_s(paramb);
+
+  } else if (mode == "exp") {
+    sf = RandomWalkGenerator::steps_exp(parama,paramb);
+    filename << p_to_s(parama) << "_b" << p_to_s(paramb);
+
+  } else {
+    error_with_help("Invalid step mode");
+    return 1;
+  }
+
   filename
     << "_n" << max_order
     << "_k" << initial_order
     << "_r" << runs;
+
+  std::cerr << "Running on mode " << mode << " with params:" << std::endl
+    << "  Seed: " << seed << std::endl
+    << "  a: " << parama << std::endl
+    << "  b: " << paramb << std::endl
+    << "  Max Order: " << max_order << std::endl
+    << "  Initial Order: " << initial_order << std::endl << std::endl;
+  
 
   if(selfloop)
     filename << "_sl";
@@ -116,7 +156,7 @@ int main(int argc, char** argv){
   }
 
   // Do the actual run
-  auto stats = RandomWalkGenerator::accumulate_measure(runner, runs, initial_order);
+  auto stats = RandomWalkGenerator::acc_run_and_measure(&mt, initial_state, sf, max_order, runs);
 
   // Save the measurements
   std::ofstream degree_out;

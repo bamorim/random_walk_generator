@@ -4,29 +4,64 @@
 #include<algorithm>
 
 namespace RandomWalkGenerator {
-  void initialize_complete_graph(Graph& graph, uint_fast32_t order, bool selfloop){
+  void initialize_complete_graph(Graph& graph, InitialState initial_state){
     uint_fast32_t i,j;
-    for(i = 0; i < order; i++){
+    for(i = 0; i < initial_state.order; i++){
       graph.add_vertex();
     }
 
-    for(i = 0; i < order; i++){
-      if(selfloop){
+    for(i = 0; i < initial_state.order; i++){
+      if(initial_state.selfloop){
         graph.add_edge(i,i);
       }
-      for(j = i+1; j < order; j++){
+      for(j = i+1; j < initial_state.order; j++){
         graph.add_edge(i,j);
       }
     }
   }
 
-  Graph run(std::mt19937 * mt, uint_fast32_t max_order, uint_fast32_t steps, uint_fast32_t initial_order, bool selfloop){
+  StepFunction steps_const(uint_fast32_t s){
+    return [s](auto n){
+      return s;
+    };
+  }
+
+  std::uniform_real_distribution<> dist(0,1);
+
+  StepFunction steps_prob(std::mt19937 * mt, double p){
+    return [mt, p](auto n){
+      if(dist(*mt) > p){
+        return 2;
+      }
+      return 1;
+    };
+  }
+
+  StepFunction steps_log(double a, double b){
+    return [a,b](auto n){
+      return floor(b*log(n)/log(a));
+    };
+  }
+
+  StepFunction steps_pow(double a, double b){
+    return [a,b](auto n){
+      return floor(b*pow(n,a));
+    };
+  }
+
+  StepFunction steps_exp(double a, double b){
+    return [a,b](auto n){
+      return floor(b*pow(a,n));
+    };
+  }
+
+  Graph run(std::mt19937 * mt, InitialState initial_state, StepFunction steps, uint_fast32_t max_order){
     Graph graph(max_order);
-    initialize_complete_graph(graph, initial_order, selfloop);
+    initialize_complete_graph(graph, initial_state);
     RandomWalker walker(mt, &graph);
 
     while(graph.order() < max_order){
-      for(uint_fast32_t i = 0; i < steps; i++){
+      for(uint_fast32_t i = 0; i < steps(graph.order()); i++){
         walker.take_step();
       }
       graph.add_vertex();
@@ -35,34 +70,6 @@ namespace RandomWalkGenerator {
 
     return graph;
   }
-
-  Graph run_one_or_two(std::mt19937 * mt, uint_fast32_t max_order, double p, uint_fast32_t initial_order, bool selfloop){
-    Graph graph(max_order);
-    initialize_complete_graph(graph, initial_order, selfloop);
-
-    std::uniform_real_distribution<> dist(0,1);
-
-    RandomWalker walker(mt, &graph);
-
-    while(graph.order() < max_order) {
-      walker.take_step();
-
-      // Take another step with probability 1-p
-      if(dist(*mt) > p){
-        walker.take_step();
-      }
-
-      graph.add_vertex();
-      graph.add_edge(graph.order()-1, walker.location());
-    }
-
-    return graph;
-  }
-
-  struct VerticeDepth {
-    uint_fast32_t vertice;
-    uint_fast32_t depth;
-  };
 
   RandomWalkGenerator::Statistics measure(Graph& graph,uint_fast32_t initial_order){
     RandomWalkGenerator::Statistics statistics;
@@ -111,13 +118,13 @@ namespace RandomWalkGenerator {
   }
 
   // TODO: Calculate the space requirements for the accumulate measurments
-  RandomWalkGenerator::Statistics accumulate_measure(std::function<Graph(void)> runner, uint_fast32_t runs, uint_fast32_t initial_order){
+  RandomWalkGenerator::Statistics acc_run_and_measure(std::mt19937 * mt, InitialState initial_state, StepFunction steps, uint_fast32_t max_order, uint_fast32_t runs){
     RandomWalkGenerator::Statistics measurement;
     RandomWalkGenerator::Statistics statistics;
 
-    for(uint_fast32_t run = 0; run < runs; run++){
-      Graph graph = runner();
-      measurement = measure(graph, initial_order);
+    for(uint_fast32_t i = 0; i < runs; i++){
+      Graph graph = run(mt, initial_state, steps, max_order);
+      measurement = measure(graph, initial_state.order);
       sum_list_to(measurement.degree_distribution, statistics.degree_distribution);
       sum_list_to(measurement.vertices_per_depth, statistics.vertices_per_depth);
     }
